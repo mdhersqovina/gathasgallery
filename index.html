@@ -386,7 +386,7 @@
                                         <span class="text-xs font-bold uppercase tracking-widest text-[#8A7D6B] group-hover:text-[#C9A96E] transition">Click to Upload</span>
                                         <span class="text-[9px] text-[#BBB] uppercase mt-1">JPG, PNG, WEBP · Max 10MB</span>
                                     </div>
-                                    <img id="preview-image" src="" alt="preview" class="hidden max-h-full max-w-full object-contain p-4 absolute inset-0 w-full h-full">
+                                    <img id="preview-image" src="" alt="preview" class="hidden object-cover absolute inset-0 w-full h-full rounded">
                                     <input type="file" id="upload-image-file" accept="image/*" onchange="previewUploadedImage(event)" class="hidden">
                                 </label>
                                 <div id="upload-img-name" class="text-[9px] text-[#8A7D6B] mt-2 uppercase tracking-wider text-center">No file selected</div>
@@ -1108,7 +1108,7 @@
                 
                 // Visual logic: check if the product utilizes a custom base64 uploaded picture or a built-in SVG vector
                 const imageRenderContent = prod.image 
-                    ? `<img src="${prod.image}" class="max-h-full max-w-full object-contain rounded p-2" alt="${prod.name}">`
+                    ? `<img src="${prod.image}" class="w-full h-full object-cover rounded" alt="${prod.name}">`
                     : prod.svg;
 
                 return `
