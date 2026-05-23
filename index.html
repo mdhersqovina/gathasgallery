@@ -1110,6 +1110,16 @@
                 const imageRenderContent = prod.image 
                     ? `<img src="${prod.image}" class="w-full h-full object-cover rounded" alt="${prod.name}">`
                     : prod.svg;
+                
+                // If uploaded image, fill the entire container. If SVG, use constrained size
+                const imageContainerClass = prod.image 
+                    ? 'w-full h-full' 
+                    : 'w-24 h-24 sm:w-36 sm:h-36 transition-transform duration-500 group-hover:scale-105';
+                
+                // For uploaded images, no padding; for SVGs, keep padding
+                const glowContainerClass = prod.image
+                    ? 'product-glow h-44 sm:h-64 flex items-center justify-center relative overflow-hidden'
+                    : 'product-glow p-4 sm:p-8 h-44 sm:h-64 flex items-center justify-center relative overflow-hidden';
 
                 return `
                     <div class="card-border bg-white flex flex-col justify-between hover:border-[#C9A96E] transition-all duration-300 group cursor-pointer relative" onclick="openProductDetail('${prod.id}')">
@@ -1133,8 +1143,8 @@
                         ` : ''}
 
                         <!-- Studio Glow Lightbox visual area - Responsive sizing for beautiful 2-column mobile layout aspect ratios -->
-                        <div class="product-glow p-4 sm:p-8 h-44 sm:h-64 flex items-center justify-center relative overflow-hidden">
-                            <div class="w-24 h-24 sm:w-36 sm:h-36 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
+                        <div class="${glowContainerClass}">
+                            <div class="${imageContainerClass} flex items-center justify-center">
                                 ${imageRenderContent}
                             </div>
                             <!-- Quick add on hover (Responsive: visible on hover only on desktop) -->
