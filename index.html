@@ -685,12 +685,8 @@ async function cloudLoad() {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (data && Array.isArray(data) && data.length > 0) {
-            // Rehydrate SVGs for default products (SVG functions can't be stored in JSON)
+            // Add fallback SVG for products without images
             const rehydrated = data.map(p => {
-                const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
-                if (defaultMatch && !p.image) {
-                    return {...p};
-                }
                 if (!p.svg) p.svg = SVGs.earring_stud; // fallback for custom uploads
                 return p;
             });
@@ -736,7 +732,6 @@ function loadLocalUserState() {
     state.products = state.products.map(p => {
         if (!p.svg && !p.image) p.svg = SVGs.earring_stud;
         return p;
-    });
     });
 }
 
@@ -1281,11 +1276,11 @@ async function deleteProductFromInventory(productId) {
 }
 
 async function restoreDefaultGallery() {
-    if (confirm("Restore original gallery? Custom uploaded images will be removed.")) {
-        state.products = [...DEFAULT_PRODUCTS];
+    if (confirm("Clear all gallery products and start fresh?")) {
+        state.products = [];
         await saveInventory();
         renderProducts(); renderAdminInventory(); updateAppStats();
-        showNotification("GALLERY RE-INITIALIZED.");
+        showNotification("GALLERY CLEARED.");
     }
 }
 
