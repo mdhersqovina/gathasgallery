@@ -766,12 +766,9 @@ async function cloudLoad() {
 window.addEventListener('DOMContentLoaded', async () => {
     loadLocalUserState();
     renderProducts();
+    // Fetch products ONLY from Firebase (no localStorage fallback)
     const cloudData = await cloudLoad();
-    if (cloudData) {
-        state.products = cloudData;
-    } else {
-        state.products = [];
-    }
+    state.products = cloudData || [];
     renderProducts();
     renderAdminInventory();
     updateAppStats();
@@ -779,19 +776,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function loadLocalUserState() {
-    // Cart & favorites stay local per device (personal preferences)
+    // Cart & favorites stay local per device (personal preferences only)
     const c = localStorage.getItem('boutique_cart');
     const f = localStorage.getItem('boutique_favs');
     if (c) state.cart = JSON.parse(c);
     if (f) state.favorites = JSON.parse(f);
-    // Load products from local storage
-    const local = localStorage.getItem(STORAGE_KEY);
-    state.products = local ? JSON.parse(local) : [];
-    // Add fallback SVG for uploaded images without SVG
-    state.products = state.products.map(p => {
-        if (!p.svg && !p.image) p.svg = SVGs.earring_stud;
-        return p;
-    });
+    // Products are ONLY fetched from Firebase (no localStorage fallback)
 }
 
 function saveState() {
