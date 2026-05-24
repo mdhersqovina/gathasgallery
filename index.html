@@ -27,7 +27,6 @@
             width: 4px; height: 8px; border: solid white;
             border-width: 0 2px 2px 0; transform: rotate(45deg);
         }
-        /* ---- MOBILE DETAIL MODAL FIX ---- */
         @media (max-width: 767px) {
             #detail-modal > div {
                 flex-direction: column !important;
@@ -38,7 +37,7 @@
             }
             #detail-modal > div > .modal-image-side {
                 min-height: 220px !important;
-                padding: 1.5rem !important;
+                padding: 0 !important;
             }
             #detail-modal > div > .modal-info-side {
                 padding: 1.25rem !important;
@@ -50,9 +49,22 @@
         .admin-tab { color: #8A7D6B; background: transparent; border: none; cursor: pointer; }
         .admin-tab:hover { color: #1A1714; }
         .active-tab { background: white; color: #C9A96E !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+        /* SYNC STATUS INDICATOR */
+        #sync-status {
+            position: fixed; bottom: 6px; left: 50%; transform: translateX(-50%);
+            font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+            color: #8A7D6B; z-index: 100; pointer-events: none; transition: opacity 0.5s;
+        }
+        #sync-status.syncing { color: #C9A96E; }
+        #sync-status.synced { color: #22c55e; }
+        #sync-status.error { color: #ef4444; }
     </style>
 </head>
 <body class="overflow-x-hidden" id="app">
+
+<!-- SYNC STATUS -->
+<div id="sync-status">⬡ READY</div>
 
 <!-- TOP HEADER -->
 <header class="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-40 bg-white/95 backdrop-blur-md border border-[#E5DFD4] rounded-full shadow-lg py-3.5 px-6 flex items-center justify-between transition-all duration-300">
@@ -176,7 +188,7 @@
     <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
 </main>
 
-<!-- ===================== PRODUCT DETAIL MODAL (mobile-optimised) ===================== -->
+<!-- ===================== PRODUCT DETAIL MODAL ===================== -->
 <div id="detail-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="relative bg-white w-full sm:max-w-4xl flex flex-col md:flex-row shadow-2xl rounded-t-2xl sm:rounded-none max-h-[92vh] sm:max-h-[88vh] overflow-hidden">
 
@@ -188,34 +200,29 @@
         <!-- Mobile drag handle -->
         <div class="md:hidden w-10 h-1 bg-[#D4B483] rounded-full mx-auto mt-3 mb-1 flex-shrink-0"></div>
 
-        <!-- IMAGE SIDE -->
-        <div class="w-full md:w-1/2 product-glow flex items-center justify-center border-b md:border-b-0 md:border-r border-[#E5DFD4] relative flex-shrink-0"
-             style="min-height:220px; max-height:42vw;">
-            <!-- on mobile cap at 42vw so info is always visible -->
-            <div id="modal-image-container" class="w-36 h-36 sm:w-52 sm:h-52 md:w-64 md:h-64 flex items-center justify-center transform scale-100 md:scale-110 p-2"></div>
+        <!-- IMAGE SIDE — fills like grid card -->
+        <div class="modal-image-side w-full md:w-1/2 flex items-center justify-center border-b md:border-b-0 md:border-r border-[#E5DFD4] relative flex-shrink-0 overflow-hidden"
+             style="min-height:260px; max-height:50vh; background:radial-gradient(circle, rgba(248,245,238,1) 0%, rgba(240,237,230,1) 85%);">
+            <div id="modal-image-container" class="w-full h-full flex items-center justify-center"></div>
             <div id="modal-sale-badge" class="absolute top-4 left-4 bg-[#C9A96E] text-white font-sans text-[10px] uppercase font-bold px-2.5 py-1 tracking-wider hidden">SALE</div>
         </div>
 
-        <!-- INFO SIDE — scrollable on mobile -->
-        <div class="w-full md:w-1/2 flex flex-col overflow-y-auto">
+        <!-- INFO SIDE -->
+        <div class="modal-info-side w-full md:w-1/2 flex flex-col overflow-y-auto">
             <div class="p-5 sm:p-8 flex flex-col flex-1">
-                <!-- Category / gender -->
                 <div class="flex items-center gap-2 mb-1.5">
                     <span id="modal-category" class="text-[10px] uppercase text-[#8A7D6B] tracking-widest font-semibold"></span>
                     <span class="text-[#D4B483]">•</span>
                     <span id="modal-gender" class="text-[10px] uppercase text-[#C9A96E] tracking-widest font-semibold"></span>
                 </div>
 
-                <!-- Title -->
                 <h2 id="modal-title" class="text-lg sm:text-2xl font-semibold uppercase tracking-wide mb-3 serif-font text-[#1A1714] leading-tight"></h2>
 
-                <!-- Price -->
                 <div class="flex items-baseline gap-3 mb-4">
                     <span id="modal-price" class="text-xl sm:text-2xl font-bold tracking-tight text-[#1A1714] font-serif"></span>
                     <span id="modal-original-price" class="text-sm line-through text-[#AAA]"></span>
                 </div>
 
-                <!-- Description + Specs -->
                 <div class="border-t border-b border-[#E5DFD4] py-4 mb-4">
                     <p id="modal-desc" class="text-xs sm:text-sm text-[#555] leading-relaxed mb-3"></p>
                     <div class="space-y-1 text-[10px] sm:text-[11px] uppercase tracking-wider text-[#8A7D6B]">
@@ -226,12 +233,10 @@
                     </div>
                 </div>
 
-                <!-- Actions -->
                 <div class="flex gap-3 mt-auto">
                     <button id="modal-add-btn" class="flex-1 bg-[#C9A96E] hover:bg-[#a8833a] text-white py-3.5 px-4 uppercase text-xs font-bold tracking-widest transition active:scale-[0.98]">
                         ADD TO BAG
                     </button>
-                    <!-- WhatsApp direct buy -->
                     <button id="modal-wa-btn" class="bg-[#25D366] hover:bg-[#1dad54] text-white px-4 flex items-center justify-center transition" title="Order via WhatsApp">
                         <svg viewBox="0 0 24 24" fill="white" class="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     </button>
@@ -284,7 +289,6 @@
 
 <!-- ===================== ADMIN DASHBOARD ===================== -->
 <div id="admin-panel" class="fixed inset-0 z-50 bg-[#F9F6F0] flex-col overflow-hidden" style="display:none">
-    <!-- TOPBAR -->
     <div class="bg-white border-b border-[#E5DFD4] px-6 py-4 flex items-center justify-between flex-shrink-0">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-[#C9A96E] rounded-full flex items-center justify-center font-bold text-white text-sm">G</div>
@@ -301,14 +305,13 @@
         <button onclick="closeAdminPanel()" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#8A7D6B] hover:text-[#1A1714] border border-[#E5DFD4] hover:border-[#C9A96E] px-4 py-2 transition">← BACK TO STORE</button>
     </div>
 
-    <!-- BODY -->
     <div class="flex-1 overflow-y-auto">
 
-        <!-- TAB 1: ADD PRODUCT — price + image only -->
+        <!-- TAB 1: ADD PRODUCT -->
         <div id="admin-tab-upload" class="admin-tab-content p-6 sm:p-10 max-w-3xl mx-auto">
             <div class="mb-8">
                 <h2 class="text-2xl font-bold uppercase tracking-widest serif-font text-[#1A1714] mb-1">Add New Product</h2>
-                <p class="text-xs text-[#8A7D6B] uppercase tracking-wider">Upload a photo and set the price — then deploy it live to your gallery instantly.</p>
+                <p class="text-xs text-[#8A7D6B] uppercase tracking-wider">Upload a photo and configure your product — then deploy it live to your gallery instantly.</p>
             </div>
 
             <form id="product-upload-form" onsubmit="handleProductUpload(event)">
@@ -340,8 +343,43 @@
                         </div>
                     </div>
 
-                    <!-- PRICE COLUMN ONLY -->
+                    <!-- DETAILS COLUMN -->
                     <div class="space-y-5 text-xs">
+
+                        <!-- ★ NEW: PRODUCT DETAILS -->
+                        <div class="border border-[#E5DFD4] p-5 bg-white">
+                            <div class="text-[9px] font-bold uppercase tracking-widest text-[#C9A96E] mb-4 pb-2 border-b border-[#E5DFD4]">🏷️ Product Details</div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Product Name (optional)</label>
+                                    <input type="text" id="upload-name" placeholder="e.g. GOLD HOOP EARRINGS" class="w-full bg-[#F9F6F0] border border-[#E5DFD4] px-3 py-2.5 text-[#1A1714] text-xs focus:outline-none focus:border-[#C9A96E] rounded-none uppercase tracking-wider">
+                                    <div class="text-[8px] text-[#AAA] mt-1">Leave blank for auto-generated name</div>
+                                </div>
+                                <div>
+                                    <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Category *</label>
+                                    <div class="relative">
+                                        <select id="upload-category" class="w-full bg-[#F9F6F0] border border-[#D4B483] px-3 py-2.5 text-[#1A1714] text-xs focus:outline-none focus:border-[#C9A96E] rounded-none appearance-none font-semibold uppercase tracking-wider cursor-pointer" required>
+                                            <option value="earring">EARRINGS</option>
+                                            <option value="bracelet">BRACELETS</option>
+                                            <option value="necklace">NECKLACES</option>
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#8A7D6B] border-l border-[#E5DFD4]">
+                                            <svg class="fill-current h-3.5 w-3.5" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Gender *</label>
+                                    <div class="flex gap-2">
+                                        <button type="button" onclick="setUploadGender('women')" id="ug-women" class="flex-1 text-[10px] font-bold uppercase px-3 py-2 border border-[#C9A96E] bg-[#C9A96E]/10 text-[#C9A96E] transition">WOMEN</button>
+                                        <button type="button" onclick="setUploadGender('men')" id="ug-men" class="flex-1 text-[10px] font-bold uppercase px-3 py-2 border border-[#E5DFD4] hover:border-[#C9A96E] text-[#555] transition">MEN</button>
+                                        <button type="button" onclick="setUploadGender('unisex')" id="ug-unisex" class="flex-1 text-[10px] font-bold uppercase px-3 py-2 border border-[#E5DFD4] hover:border-[#C9A96E] text-[#555] transition">UNISEX</button>
+                                    </div>
+                                    <input type="hidden" id="upload-gender" value="women">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- PRICING -->
                         <div class="border border-[#E5DFD4] p-5 bg-white">
                             <div class="text-[9px] font-bold uppercase tracking-widest text-[#C9A96E] mb-4 pb-2 border-b border-[#E5DFD4]">💰 Pricing</div>
@@ -385,7 +423,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-[#C9A96E] hover:bg-[#a8833a] text-white font-bold uppercase py-4 px-6 tracking-widest transition transform active:scale-[0.99] text-sm flex items-center justify-center gap-3">
+                        <button type="submit" id="deploy-btn" class="w-full bg-[#C9A96E] hover:bg-[#a8833a] text-white font-bold uppercase py-4 px-6 tracking-widest transition transform active:scale-[0.99] text-sm flex items-center justify-center gap-3">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>
                             DEPLOY TO GALLERY SHOWROOM
                         </button>
@@ -459,8 +497,8 @@
             </div>
         </div>
 
-    </div><!-- end body -->
-</div><!-- end admin panel -->
+    </div>
+</div>
 
 <!-- CART DRAWER -->
 <div id="cart-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white border-l border-[#E5DFD4] z-50 transform translate-x-full transition-transform duration-300 flex flex-col justify-between shadow-2xl">
@@ -481,7 +519,6 @@
             <div class="flex justify-between text-[#8A7D6B]"><span>SHIPPING</span><span class="text-emerald-600 font-semibold">FREE</span></div>
             <div class="border-t border-[#E5DFD4] pt-2 flex justify-between text-sm font-bold text-[#1A1714]"><span>TOTAL</span><span id="cart-total">TSH 0</span></div>
         </div>
-        <!-- WhatsApp checkout -->
         <button onclick="checkoutWhatsApp()" class="w-full bg-[#25D366] hover:bg-[#1dad54] text-white py-4 px-6 uppercase text-xs font-bold tracking-widest transition active:scale-[0.98] flex items-center justify-center gap-3">
             <svg viewBox="0 0 24 24" fill="white" class="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             CHECKOUT VIA WHATSAPP
@@ -575,9 +612,9 @@ const SVGs = {
     earring_stud:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><defs><radialGradient id="dS" cx="50%" cy="50%" r="45%"><stop offset="0%" stop-color="#ffffff"/><stop offset="60%" stop-color="#b9e2f5"/><stop offset="100%" stop-color="#1e3a8a" stop-opacity="0.3"/></radialGradient></defs><circle cx="100" cy="100" r="48" stroke="#D4AF37" stroke-width="3"/><polygon points="100,56 131,77 131,123 100,144 69,123 69,77" fill="url(#dS)" stroke="#E5E4E2" stroke-width="1.5"/><line x1="100" y1="56" x2="100" y2="144" stroke="#fff" stroke-width="1" stroke-opacity=".7"/><line x1="69" y1="77" x2="131" y2="123" stroke="#fff" stroke-width="1" stroke-opacity=".7"/><line x1="131" y1="77" x2="69" y2="123" stroke="#fff" stroke-width="1" stroke-opacity=".7"/><circle cx="100" cy="100" r="10" fill="#fff" fill-opacity=".9"/><circle cx="100" cy="51" r="3.5" fill="#D4AF37"/><circle cx="100" cy="149" r="3.5" fill="#D4AF37"/><circle cx="64" cy="100" r="3.5" fill="#D4AF37"/><circle cx="136" cy="100" r="3.5" fill="#D4AF37"/></svg>`,
     necklace_pendant:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><path d="M50,30 C100,6 100,6 150,30" stroke="#E5E4E2" stroke-width="1.5" stroke-dasharray="2 3"/><path d="M50,30 C100,2 100,2 150,30" stroke="#C0C0C0" stroke-width="1"/><rect x="94" y="24" width="12" height="18" stroke="#D4AF37" stroke-width="2" rx="2" fill="#f9f6f0"/><circle cx="100" cy="30" r="2.5" fill="#D4AF37"/><rect x="74" y="42" width="52" height="84" stroke="#D4AF37" stroke-width="3.5" rx="3" fill="#f0ede6"/><rect x="80" y="48" width="40" height="72" stroke="#D4AF37" stroke-opacity="0.5" stroke-dasharray="3 1" stroke-width="1"/><polygon points="84,56 116,56 120,60 120,108 116,112 84,112 80,108 80,60" fill="#50C878" stroke="#1b4d22" stroke-width="2"/><polygon points="84,56 100,84 116,56" fill="#A7F3D0" fill-opacity=".25"/><polygon points="84,112 100,84 116,112" fill="#047857" fill-opacity=".35"/></svg>`,
     bracelet_band:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><ellipse cx="100" cy="100" rx="72" ry="42" stroke="#D4AF37" stroke-width="5"/><ellipse cx="100" cy="100" rx="75" ry="45" stroke="#F3E5AB" stroke-opacity=".6" stroke-width="1.5" stroke-dasharray="12 4"/><g fill="#C9A96E"><circle cx="100" cy="58" r="3"/><circle cx="85" cy="61" r="2.5"/><circle cx="115" cy="61" r="2.5"/><circle cx="70" cy="70" r="2.5"/><circle cx="130" cy="70" r="2.5"/><circle cx="100" cy="142" r="3"/><circle cx="85" cy="139" r="2.5"/><circle cx="115" cy="139" r="2.5"/><circle cx="70" cy="130" r="2.5"/><circle cx="130" cy="130" r="2.5"/></g></svg>`,
+    bracelet_beads:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><circle cx="100" cy="100" r="75" stroke="#D4B483" stroke-width="1" stroke-dasharray="3 3"/><circle cx="100" cy="25" r="13" fill="#FAF9F6" stroke="#E5DFD4" stroke-width="1.5"/><circle cx="145" cy="45" r="11" fill="#FAF9F6" stroke="#E5DFD4" stroke-width="1"/><circle cx="55" cy="45" r="11" fill="#FAF9F6" stroke="#E5DFD4" stroke-width="1"/><circle cx="175" cy="100" r="11" fill="#1A1714" stroke="#C9A96E" stroke-width="2"/><circle cx="25" cy="100" r="11" fill="#1A1714" stroke="#C9A96E" stroke-width="2"/><circle cx="150" cy="145" r="9" fill="#D4AF37" stroke="#F3E5AB" stroke-width="1"/><circle cx="50" cy="145" r="9" fill="#D4AF37" stroke="#F3E5AB" stroke-width="1"/><circle cx="100" cy="175" r="11" fill="#D4AF37" stroke="#F3E5AB" stroke-width="2"/></svg>`,
     earring_cuff:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><path d="M100,45 C135,45 155,70 155,100 C155,130 135,155 100,155" stroke="#D4AF37" stroke-width="4.5" stroke-linecap="round"/><path d="M85,60 C115,60 132,80 132,100 C132,120 115,140 85,140" stroke="#C9A96E" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="155" r="9" fill="#F4F4F0" stroke="#D1D5DB" stroke-width="1"/><ellipse cx="98" cy="151" rx="4" ry="2" fill="#FFFFFF" fill-opacity=".8"/></svg>`,
-    necklace_chain:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><ellipse cx="100" cy="95" rx="80" ry="60" stroke="#D4AF37" stroke-width="5"/><ellipse cx="100" cy="95" rx="83" ry="63" stroke="#F3E5AB" stroke-width="1.5" stroke-dasharray="8 6"/><rect x="84" y="138" width="32" height="24" stroke="#C9A96E" stroke-width="2.5" rx="3" fill="#f9f6f0"/><polygon points="90,150 100,141 110,150 100,159" fill="#C9A96E"/></svg>`,
-    bracelet_beads:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><circle cx="100" cy="100" r="75" stroke="#D4B483" stroke-width="1" stroke-dasharray="3 3"/><circle cx="100" cy="25" r="13" fill="#FAF9F6" stroke="#E5DFD4" stroke-width="1.5"/><circle cx="145" cy="45" r="11" fill="#FAF9F6" stroke="#E5DFD4" stroke-width="1"/><circle cx="55" cy="45" r="11" fill="#FAF9F6" stroke="#E5DFD4" stroke-width="1"/><circle cx="175" cy="100" r="11" fill="#1A1714" stroke="#C9A96E" stroke-width="2"/><circle cx="25" cy="100" r="11" fill="#1A1714" stroke="#C9A96E" stroke-width="2"/><circle cx="150" cy="145" r="9" fill="#D4AF37" stroke="#F3E5AB" stroke-width="1"/><circle cx="50" cy="145" r="9" fill="#D4AF37" stroke="#F3E5AB" stroke-width="1"/><circle cx="100" cy="175" r="11" fill="#D4AF37" stroke="#F3E5AB" stroke-width="2"/></svg>`
+    necklace_chain:`<svg viewBox="0 0 200 200" class="w-full h-full" fill="none"><ellipse cx="100" cy="95" rx="80" ry="60" stroke="#D4AF37" stroke-width="5"/><ellipse cx="100" cy="95" rx="83" ry="63" stroke="#F3E5AB" stroke-width="1.5" stroke-dasharray="8 6"/><rect x="84" y="138" width="32" height="24" stroke="#C9A96E" stroke-width="2.5" rx="3" fill="#f9f6f0"/><polygon points="90,150 100,141 110,150 100,159" fill="#C9A96E"/></svg>`
 };
 
 /* ===== PRODUCT DB ===== */
@@ -592,49 +629,137 @@ const DEFAULT_PRODUCTS = [
     {id:"baroque-pearl-choker",name:"BAROQUE PEARL COLLAR CHOKER",category:"necklace",gender:"unisex",price:1200000,originalPrice:1625000,sale:true,newArrival:false,svg:SVGs.necklace_pendant,image:null,description:"An incredible asymmetric heavy gold link necklace featuring a single large, completely unique baroque pearl statement pendant.",specs:{material:"18K Solid Gold Platings & Natural Baroque Pearl",clamp:"Heavy T-Bar Toggle Secure",weight:"44.5g Artisan Sculpted",batch:"OCEANIC MEMOIRS"}}
 ];
 
-/* ===== WhatsApp number — replace with real number ===== */
+/* ===== CONFIG ===== */
 const WA_NUMBER = '255700000000';
+const STORAGE_KEY = 'gathas_inventory_v2';
 
 /* ===== STATE ===== */
 let state = {
-    products:[],
-    filters:{gender:'all',saleOnly:false,newOnly:false,category:'all',searchQuery:''},
-    sortBy:'relevance',
-    cart:[],
-    favorites:[],
-    isFiltersOpen:true,
-    tempUploadedImageBase64:null
+    products: [],
+    filters: {gender:'all', saleOnly:false, newOnly:false, category:'all', searchQuery:''},
+    sortBy: 'relevance',
+    cart: [],
+    favorites: [],
+    isFiltersOpen: true,
+    tempUploadedImageBase64: null,
+    uploadGender: 'women'
 };
 
+/* ===== SYNC STATUS UI ===== */
+function setSyncStatus(status, text) {
+    const el = document.getElementById('sync-status');
+    el.className = status;
+    el.textContent = text;
+    if (status === 'synced') setTimeout(() => { el.className = ''; el.textContent = '⬡ READY'; }, 3000);
+}
+
+/* ===== CROSS-DEVICE STORAGE (Firebase Realtime DB via REST) =====
+   We use a free Firebase project as a shared key-value store.
+   Images are stored as base64 strings inside each product record.
+   The inventory is stored as a single JSON blob under /inventory.json
+   Replace FIREBASE_URL with your project's URL.
+   ================================================================ */
+
+// ── IMPORTANT: Replace this with your own Firebase Realtime Database URL ──
+// Steps: go to console.firebase.google.com → create project → Realtime Database
+// → Start in test mode → copy the URL (ends in .firebaseio.com)
+const FIREBASE_URL = 'https://gathasgallery-44642-default-rtdb.europe-west1.firebasedatabase.app/';
+
+async function cloudSave(products) {
+    setSyncStatus('syncing', '⟳ SYNCING...');
+    try {
+        // Strip SVG functions from products before saving (rebuild from defaults on load)
+        const toSave = products.map(p => {
+            const clean = {...p};
+            if (!clean.image) delete clean.svg; // SVG-only items rebuilt from defaults
+            return clean;
+        });
+        const res = await fetch(`${FIREBASE_URL}/inventory.json`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(toSave)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        setSyncStatus('synced', '✓ SYNCED TO ALL DEVICES');
+    } catch(e) {
+        console.warn('Cloud save failed, using localStorage fallback:', e);
+        setSyncStatus('error', '⚠ OFFLINE — LOCAL ONLY');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    }
+}
+
+async function cloudLoad() {
+    setSyncStatus('syncing', '⟳ LOADING GALLERY...');
+    try {
+        const res = await fetch(`${FIREBASE_URL}/inventory.json`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data && Array.isArray(data) && data.length > 0) {
+            // Rehydrate SVGs for default products (SVG functions can't be stored in JSON)
+            const rehydrated = data.map(p => {
+                const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
+                if (defaultMatch && !p.image) {
+                    return {...defaultMatch, ...p, svg: defaultMatch.svg};
+                }
+                if (!p.svg) p.svg = SVGs.earring_stud; // fallback for custom uploads
+                return p;
+            });
+            setSyncStatus('synced', '✓ GALLERY LOADED');
+            return rehydrated;
+        }
+        setSyncStatus('synced', '✓ READY');
+        return null; // no data yet → use defaults
+    } catch(e) {
+        console.warn('Cloud load failed, using localStorage fallback:', e);
+        setSyncStatus('error', '⚠ OFFLINE MODE');
+        const local = localStorage.getItem(STORAGE_KEY);
+        return local ? JSON.parse(local) : null;
+    }
+}
+
 /* ===== INIT ===== */
-window.addEventListener('DOMContentLoaded', () => {
-    initializeDatabase();
-    loadState();
+window.addEventListener('DOMContentLoaded', async () => {
+    loadLocalUserState();
+    renderProducts(); // render defaults immediately while loading
+    const cloudData = await cloudLoad();
+    if (cloudData) {
+        state.products = cloudData;
+    } else {
+        state.products = [...DEFAULT_PRODUCTS];
+        await cloudSave(state.products);
+    }
     renderProducts();
     renderAdminInventory();
     updateAppStats();
     setupFilterDefaultVis();
 });
 
-function initializeDatabase() {
-    const saved = localStorage.getItem('gathas_custom_inventory');
-    if (saved && JSON.parse(saved).length > 0) {
-        state.products = JSON.parse(saved);
-    } else {
-        state.products = [...DEFAULT_PRODUCTS];
-        localStorage.setItem('gathas_custom_inventory', JSON.stringify(state.products));
-    }
-}
-function saveInventory() { localStorage.setItem('gathas_custom_inventory', JSON.stringify(state.products)); }
-function loadState() {
+function loadLocalUserState() {
+    // Cart & favorites stay local per device (personal preferences)
     const c = localStorage.getItem('boutique_cart');
     const f = localStorage.getItem('boutique_favs');
     if (c) state.cart = JSON.parse(c);
     if (f) state.favorites = JSON.parse(f);
+    // Also load products from local as temp while cloud loads
+    const local = localStorage.getItem(STORAGE_KEY);
+    state.products = local ? JSON.parse(local) : [...DEFAULT_PRODUCTS];
+    // Rehydrate SVGs
+    state.products = state.products.map(p => {
+        const def = DEFAULT_PRODUCTS.find(d => d.id === p.id);
+        if (def && !p.image) return {...def, ...p, svg: def.svg};
+        if (!p.svg) p.svg = SVGs.earring_stud;
+        return p;
+    });
 }
+
 function saveState() {
     localStorage.setItem('boutique_cart', JSON.stringify(state.cart));
     localStorage.setItem('boutique_favs', JSON.stringify(state.favorites));
+}
+
+async function saveInventory() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.products));
+    await cloudSave(state.products);
 }
 
 /* ===== FORMAT PRICE ===== */
@@ -671,13 +796,16 @@ function renderProducts() {
     grid.innerHTML = filtered.map(prod => {
         const isFav = state.favorites.includes(prod.id);
         const discPct = prod.originalPrice ? Math.round(((prod.originalPrice-prod.price)/prod.originalPrice)*100) : 0;
-        const imgContent = prod.image
-            ? `<img src="${prod.image}" class="w-full h-full object-cover" alt="${prod.name}">`
-            : prod.svg;
-        const glowClass = prod.image
-            ? 'product-glow h-44 sm:h-64 flex items-center justify-center relative overflow-hidden'
-            : 'product-glow p-4 sm:p-8 h-44 sm:h-64 flex items-center justify-center relative overflow-hidden';
-        const innerClass = prod.image ? 'w-full h-full' : 'w-24 h-24 sm:w-36 sm:h-36 transition-transform duration-500 group-hover:scale-105';
+
+        // ★ FIX: image products fill the card, SVG products use constrained size
+        let imageAreaHtml;
+        if (prod.image) {
+            imageAreaHtml = `<div class="product-glow h-44 sm:h-64 flex items-center justify-center relative overflow-hidden">
+                <img src="${prod.image}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="${prod.name}">`;
+        } else {
+            imageAreaHtml = `<div class="product-glow p-4 sm:p-8 h-44 sm:h-64 flex items-center justify-center relative overflow-hidden">
+                <div class="w-24 h-24 sm:w-36 sm:h-36 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">${prod.svg||''}</div>`;
+        }
 
         return `
         <div class="card-border bg-white flex flex-col justify-between hover:border-[#C9A96E] transition-all duration-300 group cursor-pointer relative" onclick="openProductDetail('${prod.id}')">
@@ -688,8 +816,7 @@ function renderProducts() {
             </div>
             ${prod.sale ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-[#C9A96E] text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">${discPct}% OFF</div>` : ''}
             ${prod.newArrival && !prod.sale ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-[#1A1714] text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">NEW</div>` : ''}
-            <div class="${glowClass}">
-                <div class="${innerClass} flex items-center justify-center">${imgContent}</div>
+            ${imageAreaHtml}
                 <button onclick="event.stopPropagation(); quickAdd('${prod.id}')" class="hidden sm:block absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-[#1A1714] text-[10px] font-bold px-4 py-2 uppercase tracking-widest opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-[#C9A96E] hover:text-white border border-[#E5DFD4]">
                     + ADD TO BAG
                 </button>
@@ -697,7 +824,7 @@ function renderProducts() {
             <div class="p-3 sm:p-4 border-t border-[#E5DFD4] flex flex-col justify-between flex-grow">
                 <div>
                     <h3 class="font-bold uppercase text-[10px] sm:text-xs tracking-wider text-[#1A1714] group-hover:text-[#C9A96E] transition-colors duration-200 leading-snug line-clamp-2">${prod.name}</h3>
-                    <p class="text-[8px] sm:text-[9px] text-[#8A7D6B] uppercase mt-1 tracking-widest">${prod.category} Collection</p>
+                    <p class="text-[8px] sm:text-[9px] text-[#8A7D6B] uppercase mt-1 tracking-widest">${prod.category} · ${prod.gender}</p>
                 </div>
                 <div class="flex items-baseline justify-between mt-3 sm:mt-4">
                     <span class="text-xs sm:text-sm font-bold tracking-tight text-[#1A1714] font-serif">${fmt(prod.price)}</span>
@@ -737,19 +864,22 @@ function renderAdminInventory() {
     }
     container.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${
         state.products.map(prod => {
-            const imgContent = prod.image
-                ? `<img src="${prod.image}" class="max-h-full max-w-full object-contain p-2" alt="${prod.name}">`
-                : `<div class="w-full h-full flex items-center justify-center">${prod.svg||''}</div>`;
+            let imgHtml;
+            if (prod.image) {
+                imgHtml = `<img src="${prod.image}" class="w-full h-full object-cover" alt="${prod.name}">`;
+            } else {
+                imgHtml = `<div class="w-full h-full flex items-center justify-center p-4">${prod.svg||''}</div>`;
+            }
             return `<div class="bg-white border border-[#E5DFD4] hover:border-[#C9A96E] transition-all group">
                 <div class="h-36 bg-[#F9F6F0] flex items-center justify-center relative overflow-hidden">
-                    ${imgContent}
+                    ${imgHtml}
                     <div class="absolute top-2 left-2 flex gap-1 flex-wrap">
                         ${prod.sale ? '<span class="text-[8px] font-bold bg-[#C9A96E] text-white px-1.5 py-0.5 uppercase">SALE</span>' : ''}
                         ${prod.newArrival ? '<span class="text-[8px] font-bold bg-[#1A1714] text-white px-1.5 py-0.5 uppercase">NEW</span>' : ''}
                     </div>
                 </div>
                 <div class="p-3 border-t border-[#E5DFD4]">
-                    <div class="text-[8px] text-[#C9A96E] uppercase tracking-widest mb-0.5">${prod.category}</div>
+                    <div class="text-[8px] text-[#C9A96E] uppercase tracking-widest mb-0.5">${prod.category} · ${prod.gender}</div>
                     <div class="font-bold text-[11px] text-[#1A1714] uppercase leading-tight truncate mb-2">${prod.name}</div>
                     <div class="flex items-center justify-between">
                         <div class="flex items-baseline gap-2">
@@ -772,12 +902,12 @@ function renderCart() {
     }
     container.innerHTML = state.cart.map(item => {
         const p = item.product;
-        const imgContent = p.image ? `<img src="${p.image}" class="max-h-full max-w-full object-contain rounded"/>` : p.svg;
+        const imgContent = p.image ? `<img src="${p.image}" class="max-h-full max-w-full object-contain rounded"/>` : (p.svg || '');
         return `<div class="flex items-center gap-4 p-3 bg-[#F9F6F0] border border-[#E5DFD4]">
-            <div class="w-16 h-16 bg-[#F0EDE6] flex items-center justify-center flex-shrink-0">${imgContent}</div>
+            <div class="w-16 h-16 bg-[#F0EDE6] flex items-center justify-center flex-shrink-0 overflow-hidden">${imgContent}</div>
             <div class="flex-grow min-w-0">
                 <h4 class="font-bold text-xs uppercase tracking-tight text-[#1A1714] truncate">${p.name}</h4>
-                <p class="text-[9px] text-[#8A7D6B] uppercase tracking-widest mt-0.5">${p.category} collection</p>
+                <p class="text-[9px] text-[#8A7D6B] uppercase tracking-widest mt-0.5">${p.category} · ${p.gender}</p>
                 <p class="text-xs font-bold text-[#1A1714] mt-1">${fmt(p.price)}</p>
             </div>
             <div class="flex flex-col items-end gap-2">
@@ -801,13 +931,13 @@ function renderFavorites() {
     }
     const favProducts = state.products.filter(p => state.favorites.includes(p.id));
     container.innerHTML = favProducts.map(prod => {
-        const imgContent = prod.image ? `<img src="${prod.image}" class="max-h-full max-w-full object-contain rounded"/>` : prod.svg;
+        const imgContent = prod.image ? `<img src="${prod.image}" class="max-h-full max-w-full object-contain rounded"/>` : (prod.svg || '');
         return `<div class="flex items-center justify-between gap-4 p-3 bg-[#F9F6F0] border border-[#E5DFD4]">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-[#F0EDE6] flex items-center justify-center flex-shrink-0">${imgContent}</div>
+                <div class="w-12 h-12 bg-[#F0EDE6] flex items-center justify-center flex-shrink-0 overflow-hidden">${imgContent}</div>
                 <div>
                     <h4 class="font-bold text-xs uppercase tracking-tight text-[#1A1714] truncate max-w-[150px]">${prod.name}</h4>
-                    <p class="text-[9px] text-[#8A7D6B] uppercase tracking-wider">${prod.category}</p>
+                    <p class="text-[9px] text-[#8A7D6B] uppercase tracking-wider">${prod.category} · ${prod.gender}</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -891,11 +1021,7 @@ function toggleFavorite(productId) {
 /* ===== WHATSAPP CHECKOUT ===== */
 function checkoutWhatsApp() {
     if (state.cart.length === 0) { showNotification("YOUR BAG IS EMPTY."); return; }
-
-    let msg = `✨ *NEW ORDER — GATHAS GALLERY*\n\n`;
-    msg += `🛍️ *ORDER SUMMARY:*\n`;
-    msg += `${'─'.repeat(30)}\n`;
-
+    let msg = `✨ *NEW ORDER — GATHAS GALLERY*\n\n🛍️ *ORDER SUMMARY:*\n${'─'.repeat(30)}\n`;
     let subtotal=0, discount=0;
     state.cart.forEach(item => {
         const p = item.product;
@@ -904,13 +1030,9 @@ function checkoutWhatsApp() {
         if (p.originalPrice) discount += (p.originalPrice-p.price)*item.quantity;
         msg += `• *${p.name}*\n  Qty: ${item.quantity}  |  ${fmt(lineTotal)}\n`;
     });
-
     msg += `${'─'.repeat(30)}\n`;
     if (discount > 0) msg += `💸 *Discounts:* -${fmt(discount)}\n`;
-    msg += `🚚 *Shipping:* FREE\n`;
-    msg += `💰 *TOTAL: ${fmt(subtotal-discount)}*\n\n`;
-    msg += `_Sent via Gathas Gallery · Dar es Salaam_`;
-
+    msg += `🚚 *Shipping:* FREE\n💰 *TOTAL: ${fmt(subtotal-discount)}*\n\n_Sent via Gathas Gallery · Dar es Salaam_`;
     const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
     showNotification("OPENING WHATSAPP WITH YOUR ORDER...");
@@ -941,7 +1063,7 @@ function setGenderFilter(gender) {
 function handleSaleToggle(v) { state.filters.saleOnly=v; document.getElementById('on-sale-cb').checked=v; renderProducts(); }
 function clearSaleOnly() { handleSaleToggle(false); }
 function handleNewToggle(v) { state.filters.newOnly=v; document.getElementById('new-arrivals-cb').checked=v; renderProducts(); }
-function clearNewOnly() { handleNewToggle(false); }
+function clearNewOnly() { handleNewOnly(false); }
 function setProductType(type) {
     state.filters.category = type;
     document.getElementById('product-type-select').value = type;
@@ -963,6 +1085,19 @@ function resetFilters() {
     document.getElementById('search-input').value='';
     renderProducts();
     showNotification("FILTERS RESET.");
+}
+
+/* ===== UPLOAD GENDER SELECTOR ===== */
+function setUploadGender(gender) {
+    state.uploadGender = gender;
+    document.getElementById('upload-gender').value = gender;
+    ['women','men','unisex'].forEach(g => {
+        const btn = document.getElementById(`ug-${g}`);
+        if (!btn) return;
+        btn.className = g === gender
+            ? 'flex-1 text-[10px] font-bold uppercase px-3 py-2 border border-[#C9A96E] bg-[#C9A96E]/10 text-[#C9A96E] transition'
+            : 'flex-1 text-[10px] font-bold uppercase px-3 py-2 border border-[#E5DFD4] hover:border-[#C9A96E] text-[#555] transition';
+    });
 }
 
 /* ===== IMAGE PREVIEW ===== */
@@ -1072,10 +1207,9 @@ function closeAdminPanel() {
     document.getElementById('admin-panel').style.display='none';
     document.body.classList.remove('overflow-hidden');
 }
-function toggleAdminPanel() { closeAdminPanel(); }
 
-/* ===== PRODUCT UPLOAD (price + image only) ===== */
-function handleProductUpload(event) {
+/* ===== PRODUCT UPLOAD ===== */
+async function handleProductUpload(event) {
     event.preventDefault();
     if (!state.tempUploadedImageBase64) { showNotification("PLEASE CHOOSE A PRODUCT IMAGE."); return; }
 
@@ -1084,14 +1218,20 @@ function handleProductUpload(event) {
     const originalPrice = compareInput ? parseFloat(compareInput) : null;
     const saleFlag = document.getElementById('upload-sale-flag').checked;
     const newFlag = document.getElementById('upload-new').checked;
+    const category = document.getElementById('upload-category').value;
+    const gender = document.getElementById('upload-gender').value || 'women';
+    const nameInput = document.getElementById('upload-name').value.trim().toUpperCase();
 
     if (!priceInput || priceInput <= 0) { showNotification("PLEASE ENTER A VALID PRICE."); return; }
 
+    const catLabels = {earring:'EARRINGS', bracelet:'BRACELETS', necklace:'NECKLACES'};
+    const autoName = `${catLabels[category]||'PIECE'} #${state.products.length + 1}`;
+
     const newProduct = {
         id: `gatha-custom-${Date.now()}`,
-        name: `GALLERY PIECE #${state.products.length + 1}`,
-        category: 'earring',
-        gender: 'unisex',
+        name: nameInput || autoName,
+        category: category,
+        gender: gender,
         price: priceInput,
         originalPrice: originalPrice,
         sale: saleFlag || !!originalPrice,
@@ -1099,18 +1239,38 @@ function handleProductUpload(event) {
         svg: null,
         image: state.tempUploadedImageBase64,
         description: 'A beautiful handcrafted piece from Gathas Gallery, Dar es Salaam.',
-        specs: { material: 'PREMIUM MATERIALS', clamp: 'SECURE CLASP', weight: 'LIGHTWEIGHT', batch: 'GALLERY COLLECTION [2026]' }
+        specs: {
+            material: 'PREMIUM MATERIALS',
+            clamp: 'SECURE CLASP',
+            weight: 'LIGHTWEIGHT',
+            batch: `GALLERY COLLECTION [2026]`
+        }
     };
 
+    // Optimistically add
     state.products.unshift(newProduct);
-    saveInventory();
     renderProducts();
     renderAdminInventory();
     updateAppStats();
 
+    // Deploy button feedback
+    const btn = document.getElementById('deploy-btn');
+    btn.textContent = '⟳ DEPLOYING...';
+    btn.disabled = true;
+
+    await saveInventory();
+
+    btn.textContent = '✓ DEPLOYED TO ALL DEVICES';
+    setTimeout(() => {
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg> DEPLOY TO GALLERY SHOWROOM`;
+        btn.disabled = false;
+    }, 2000);
+
     // Reset form
     document.getElementById('product-upload-form').reset();
     state.tempUploadedImageBase64 = null;
+    state.uploadGender = 'women';
+    setUploadGender('women');
     const img = document.getElementById('preview-image');
     const dz = document.getElementById('upload-drop-zone');
     const nm = document.getElementById('upload-img-name');
@@ -1119,21 +1279,24 @@ function handleProductUpload(event) {
     if (nm) nm.textContent = 'No file selected';
 
     switchAdminTab('inventory');
-    showNotification(`PIECE DEPLOYED TO GALLERY SHOWROOM.`);
+    showNotification(`PIECE DEPLOYED TO ALL DEVICES.`);
 }
 
-function deleteProductFromInventory(productId) {
+async function deleteProductFromInventory(productId) {
     state.products = state.products.filter(p=>p.id!==productId);
     state.favorites = state.favorites.filter(id=>id!==productId);
     state.cart = state.cart.filter(i=>i.product.id!==productId);
-    saveInventory(); saveState();
+    saveState();
+    await saveInventory();
     renderProducts(); renderAdminInventory(); renderCart(); renderFavorites(); updateAppStats();
     showNotification("DESIGN RETIRED FROM GALLERY.");
 }
-function restoreDefaultGallery() {
+
+async function restoreDefaultGallery() {
     if (confirm("Restore original gallery? Custom uploaded images will be removed.")) {
         state.products = [...DEFAULT_PRODUCTS];
-        saveInventory(); renderProducts(); renderAdminInventory(); updateAppStats();
+        await saveInventory();
+        renderProducts(); renderAdminInventory(); updateAppStats();
         showNotification("GALLERY RE-INITIALIZED.");
     }
 }
@@ -1158,8 +1321,13 @@ function openProductDetail(productId) {
     if (prod.originalPrice) { origPrice.innerText=fmt(prod.originalPrice); origPrice.classList.remove('hidden'); saleBadge.classList.remove('hidden'); }
     else { origPrice.classList.add('hidden'); saleBadge.classList.add('hidden'); }
 
+    // ★ FIX: image fills the modal container like the grid card
     const imgContainer = document.getElementById('modal-image-container');
-    imgContainer.innerHTML = prod.image ? `<img src="${prod.image}" class="max-h-full max-w-full object-contain rounded"/>` : prod.svg;
+    if (prod.image) {
+        imgContainer.innerHTML = `<img src="${prod.image}" class="w-full h-full object-cover" alt="${prod.name}">`;
+    } else {
+        imgContainer.innerHTML = `<div class="w-40 h-40 sm:w-56 sm:h-56 flex items-center justify-center">${prod.svg||''}</div>`;
+    }
 
     const addBtn = document.getElementById('modal-add-btn');
     addBtn.onclick = () => { quickAdd(prod.id); closeProductDetail(); };
