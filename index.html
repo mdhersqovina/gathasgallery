@@ -618,16 +618,6 @@ const SVGs = {
 };
 
 /* ===== PRODUCT DB ===== */
-const DEFAULT_PRODUCTS = [
-    {id:"royal-pearl-studs",name:"ROYAL FRESHWATER PEARL STUDS",category:"earring",gender:"women",price:337500,originalPrice:487500,sale:true,newArrival:false,svg:SVGs.earring_stud,image:null,description:"Lustrous round freshwater pearls held gracefully in a four-claw mount of solid 18k yellow gold. Designed for comfort and effortless everyday elegance.",specs:{material:"18K Solid Gold Mount & Pearl Core",clamp:"Premium Butterfly Back Tension Lock",weight:"2.8g Ultra-Lightweight",batch:"CLASSICS RE-ISSUE"}},
-    {id:"emerald-pendant-necklace",name:"EMERALD OCTAGON PENDANT",category:"necklace",gender:"unisex",price:1125000,originalPrice:null,sale:false,newArrival:true,svg:SVGs.necklace_pendant,image:null,description:"A striking emerald-cut deep green laboratory mineral emerald suspended inside a heavy CNC-milled structural frame of hand-finished solid gold.",specs:{material:"18K Yellow Gold & Premium Hydrothermal Emerald",clamp:"Reinforced Lobster Clasp Link",weight:"16.4g Statement Focal",batch:"METROPOLIS DROP"}},
-    {id:"hammered-gold-cuff",name:"HAMMERED GOLD CUFF BRACELET",category:"bracelet",gender:"unisex",price:800000,originalPrice:1050000,sale:true,newArrival:false,svg:SVGs.bracelet_band,image:null,description:"A hand-textured organic solid gold cuff designed to catch ambient lighting from all angles. Fully adjustable flex layout with micro-diamond pavé detailing.",specs:{material:"18K Gold Plated Brass & Pavé Crystals",clamp:"Adjustable Flexible Tension Hoop",weight:"24.5g Medium Solid",batch:"COASTAL ARCHIVES"}},
-    {id:"sterling-bead-bracelet",name:"ONYX & PEARL BEAD BRACELET",category:"bracelet",gender:"men",price:525000,originalPrice:null,sale:false,newArrival:true,svg:SVGs.bracelet_beads,image:null,description:"Deep, highly-polished black onyx beads interlocked with brilliant organic freshwater pearls and finished with gold beads.",specs:{material:"925 Sterling Silver, Grade-A Onyx & Pearls",clamp:"Internal Heavy Polymer Cord",weight:"14.2g Comfort Grip",batch:"STUDIO DROP"}},
-    {id:"herringbone-collar-necklace",name:"HERRINGBONE COLLAR NECKLACE",category:"necklace",gender:"women",price:1475000,originalPrice:null,sale:false,newArrival:true,svg:SVGs.necklace_chain,image:null,description:"An elegant, perfectly flat-woven gold herringbone necklace designed to rest flush against the neckline. Complete with a signature custom lock bezel.",specs:{material:"Premium 18K Hand-Finished Gold Platings",clamp:"Integrated Custom Security Box Lock",weight:"32.0g Solid Drape",batch:"METROPOLIS RELEASE"}},
-    {id:"orbit-pave-cuffs",name:"ORBIT PAVÉ HOOP CUFFS",category:"earring",gender:"women",price:362500,originalPrice:550000,sale:true,newArrival:false,svg:SVGs.earring_cuff,image:null,description:"Sophisticated double concentric gold and silver cuffs that drape gracefully, finished with a flawless pearl drop accent.",specs:{material:"18K Yellow Gold & 925 Sterling Silver",clamp:"Friction Cushion Grip Fit",weight:"6.2g Lightweight Drop",batch:"AURORA COLLECTION"}},
-    {id:"eternity-gold-earring",name:"ETERNITY CONCENTRIC HOOPS",category:"earring",gender:"unisex",price:237500,originalPrice:null,sale:false,newArrival:true,svg:SVGs.earring_stud,image:null,description:"Minimalist layered geometric hoops crafted to create a stacked illusion. Perfect for single piercings or modular cluster stacking.",specs:{material:"925 Hypoallergenic Sterling Silver",clamp:"Click-Secure Reinforced Clasp",weight:"4.1g Featherweight",batch:"CLASSICS BASICS"}},
-    {id:"baroque-pearl-choker",name:"BAROQUE PEARL COLLAR CHOKER",category:"necklace",gender:"unisex",price:1200000,originalPrice:1625000,sale:true,newArrival:false,svg:SVGs.necklace_pendant,image:null,description:"An incredible asymmetric heavy gold link necklace featuring a single large, completely unique baroque pearl statement pendant.",specs:{material:"18K Solid Gold Platings & Natural Baroque Pearl",clamp:"Heavy T-Bar Toggle Secure",weight:"44.5g Artisan Sculpted",batch:"OCEANIC MEMOIRS"}}
-];
 
 /* ===== CONFIG ===== */
 const WA_NUMBER = '255700000000';
@@ -699,7 +689,7 @@ async function cloudLoad() {
             const rehydrated = data.map(p => {
                 const defaultMatch = DEFAULT_PRODUCTS.find(d => d.id === p.id);
                 if (defaultMatch && !p.image) {
-                    return {...defaultMatch, ...p, svg: defaultMatch.svg};
+                    return {...p};
                 }
                 if (!p.svg) p.svg = SVGs.earring_stud; // fallback for custom uploads
                 return p;
@@ -720,13 +710,12 @@ async function cloudLoad() {
 /* ===== INIT ===== */
 window.addEventListener('DOMContentLoaded', async () => {
     loadLocalUserState();
-    renderProducts(); // render defaults immediately while loading
+    renderProducts();
     const cloudData = await cloudLoad();
     if (cloudData) {
         state.products = cloudData;
     } else {
-        state.products = [...DEFAULT_PRODUCTS];
-        await cloudSave(state.products);
+        state.products = [];
     }
     renderProducts();
     renderAdminInventory();
@@ -740,15 +729,14 @@ function loadLocalUserState() {
     const f = localStorage.getItem('boutique_favs');
     if (c) state.cart = JSON.parse(c);
     if (f) state.favorites = JSON.parse(f);
-    // Also load products from local as temp while cloud loads
+    // Load products from local storage
     const local = localStorage.getItem(STORAGE_KEY);
-    state.products = local ? JSON.parse(local) : [...DEFAULT_PRODUCTS];
-    // Rehydrate SVGs
+    state.products = local ? JSON.parse(local) : [];
+    // Add fallback SVG for uploaded images without SVG
     state.products = state.products.map(p => {
-        const def = DEFAULT_PRODUCTS.find(d => d.id === p.id);
-        if (def && !p.image) return {...def, ...p, svg: def.svg};
-        if (!p.svg) p.svg = SVGs.earring_stud;
+        if (!p.svg && !p.image) p.svg = SVGs.earring_stud;
         return p;
+    });
     });
 }
 
