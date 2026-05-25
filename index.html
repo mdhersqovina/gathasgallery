@@ -1225,17 +1225,52 @@ function previewUploadedImage(event) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
-        state.tempUploadedImageBase64 = e.target.result;
-        const img = document.getElementById('preview-image');
-        const dz = document.getElementById('upload-drop-zone');
-        const nm = document.getElementById('upload-img-name');
-        img.src = e.target.result;
-        img.classList.remove('hidden');
-        img.style.display = 'block';
-        if (dz) dz.style.display = 'none';
-        if (nm) nm.textContent = '✓ ' + file.name;
+        // Compress image before storing
+        compressImage(e.target.result, function(compressedBase64) {
+            state.tempUploadedImageBase64 = compressedBase64;
+            const img = document.getElementById('preview-image');
+            const dz = document.getElementById('upload-drop-zone');
+            const nm = document.getElementById('upload-img-name');
+            img.src = compressedBase64;
+            img.classList.remove('hidden');
+            img.style.display = 'block';
+            if (dz) dz.style.display = 'none';
+            if (nm) nm.textContent = '✓ ' + file.name + ' (compressed)';
+        });
     };
     reader.readAsDataURL(file);
+}
+
+/* ===== IMAGE COMPRESSION ===== */
+function compressImage(base64Str, callback) {
+    const img = new Image();
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Resize to max 1200px while keeping aspect ratio
+        const maxDim = 1200;
+        if (width > maxDim || height > maxDim) {
+            if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+            } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+            }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress to JPEG with quality 0.75
+        const compressed = canvas.toDataURL('image/jpeg', 0.75);
+        callback(compressed);
+    };
+    img.src = base64Str;
 }
 
 /* ===== ADMIN TABS ===== */
