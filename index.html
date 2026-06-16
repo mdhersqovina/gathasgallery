@@ -441,22 +441,35 @@
 
                         <!-- PRICING -->
                         <div class="border border-[#E5DFD4] p-5 bg-white">
-                            <div class="text-[9px] font-bold uppercase tracking-widest text-[#C9A96E] mb-4 pb-2 border-b border-[#E5DFD4]">💰 Pricing</div>
+                            <div class="text-[9px] font-bold uppercase tracking-widest text-[#C9A96E] mb-4 pb-2 border-b border-[#E5DFD4]">💰 Pricing (in TZS)</div>
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Sale Price (TSH) *</label>
+                                    <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Sale Price (TZS) *</label>
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#C9A96E] font-bold text-sm">TSH</span>
-                                        <input type="number" step="1" min="0" id="upload-price" placeholder="0" class="w-full bg-[#F9F6F0] border border-[#D4B483] pl-12 pr-3 py-3 text-[#1A1714] font-bold text-sm focus:outline-none focus:border-[#C9A96E] rounded-none" required>
+                                        <input type="number" step="1" min="0" id="upload-price" placeholder="100000" class="w-full bg-[#F9F6F0] border border-[#D4B483] pl-12 pr-3 py-3 text-[#1A1714] font-bold text-sm focus:outline-none focus:border-[#C9A96E] rounded-none" required>
                                     </div>
+                                    <div class="text-[8px] text-[#AAA] mt-1">Enter amount in Tanzanian Shillings (e.g., 100000 for TSH 100,000)</div>
                                 </div>
                                 <div>
                                     <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Original Price (for SALE badge — optional)</label>
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A7D6B] text-sm">TSH</span>
-                                        <input type="number" step="1" min="0" id="upload-compare-price" placeholder="0" class="w-full bg-[#F9F6F0] border border-[#E5DFD4] pl-12 pr-3 py-3 text-[#1A1714] focus:outline-none focus:border-[#C9A96E] rounded-none">
+                                        <input type="number" step="1" min="0" id="upload-compare-price" placeholder="150000" class="w-full bg-[#F9F6F0] border border-[#E5DFD4] pl-12 pr-3 py-3 text-[#1A1714] focus:outline-none focus:border-[#C9A96E] rounded-none">
                                     </div>
-                                    <div class="text-[8px] text-[#AAA] mt-1">Leave blank if not on sale</div>
+                                    <div class="text-[8px] text-[#AAA] mt-1">Leave blank if not on sale. Enter in TZS.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- INVENTORY STOCK -->
+                        <div class="border border-[#E5DFD4] p-5 bg-white">
+                            <div class="text-[9px] font-bold uppercase tracking-widest text-[#C9A96E] mb-4 pb-2 border-b border-[#E5DFD4]">📦 Inventory</div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[#8A7D6B] uppercase tracking-widest mb-1.5 font-semibold text-[9px]">Number of Pieces Available *</label>
+                                    <input type="number" step="1" min="0" id="upload-stock" placeholder="10" value="1" class="w-full bg-[#F9F6F0] border border-[#E5DFD4] px-3 py-3 text-[#1A1714] font-bold text-sm focus:outline-none focus:border-[#C9A96E] rounded-none" required>
+                                    <div class="text-[8px] text-[#AAA] mt-1">How many pieces of this design do you have available?</div>
                                 </div>
                             </div>
                         </div>
@@ -828,6 +841,8 @@ function renderProducts() {
     grid.innerHTML = filtered.map(prod => {
         const isFav = state.favorites.includes(prod.id);
         const discPct = prod.originalPrice ? Math.round(((prod.originalPrice-prod.price)/prod.originalPrice)*100) : 0;
+        const stockAvailable = prod.stock > 0;
+        const stockCount = prod.stock || 0;
 
         // ★ FIX: image products fill the card, SVG products use constrained size
         let imageAreaHtml;
@@ -840,17 +855,18 @@ function renderProducts() {
         }
 
         return `
-        <div class="card-border bg-white flex flex-col justify-between hover:border-[#C9A96E] transition-all duration-300 group cursor-pointer relative" onclick="openProductDetail('${prod.id}')">
+        <div class="card-border bg-white flex flex-col justify-between hover:border-[#C9A96E] transition-all duration-300 group cursor-pointer relative ${!stockAvailable ? 'opacity-60' : ''}" onclick="openProductDetail('${prod.id}')">
             <div class="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10">
                 <button onclick="event.stopPropagation(); toggleFavorite('${prod.id}')" class="text-[#8A7D6B] hover:text-[#C9A96E] transition duration-150">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 ${isFav ? 'fill-[#C9A96E] text-[#C9A96E]' : 'fill-none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                 </button>
             </div>
-            ${prod.sale ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-[#C9A96E] text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">${discPct}% OFF</div>` : ''}
-            ${prod.newArrival && !prod.sale ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-[#1A1714] text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">NEW</div>` : ''}
+            ${!stockAvailable ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-red-600 text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">OUT OF STOCK</div>` : ''}
+            ${prod.sale && stockAvailable ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-[#C9A96E] text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">${discPct}% OFF</div>` : ''}
+            ${prod.newArrival && !prod.sale && stockAvailable ? `<div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 bg-[#1A1714] text-white text-[8px] sm:text-[9px] uppercase font-bold px-1.5 sm:px-2 py-0.5 tracking-wider">NEW</div>` : ''}
             ${imageAreaHtml}
-                <button onclick="event.stopPropagation(); quickAdd('${prod.id}')" class="hidden sm:block absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-[#1A1714] text-[10px] font-bold px-4 py-2 uppercase tracking-widest opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-[#C9A96E] hover:text-white border border-[#E5DFD4]">
-                    + ADD TO BAG
+                <button onclick="event.stopPropagation(); quickAdd('${prod.id}')" ${!stockAvailable ? 'disabled' : ''} class="hidden sm:block absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-[#1A1714] text-[10px] font-bold px-4 py-2 uppercase tracking-widest opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-[#C9A96E] hover:text-white border border-[#E5DFD4] disabled:opacity-50 disabled:cursor-not-allowed">
+                    ${!stockAvailable ? '⊘ OUT OF STOCK' : '+ ADD TO BAG'}
                 </button>
             </div>
             <div class="p-3 sm:p-4 border-t border-[#E5DFD4] flex flex-col justify-between flex-grow">
@@ -861,6 +877,9 @@ function renderProducts() {
                 <div class="flex items-baseline justify-between mt-3 sm:mt-4">
                     <span class="text-xs sm:text-sm font-bold tracking-tight text-[#1A1714] font-serif">${fmt(prod.price)}</span>
                     ${prod.originalPrice ? `<span class="text-[10px] sm:text-xs line-through text-[#AAA]">${fmt(prod.originalPrice)}</span>` : ''}
+                </div>
+                <div class="text-[7px] sm:text-[8px] text-[#8A7D6B] uppercase tracking-widest mt-2 font-semibold">
+                    📦 ${stockCount} IN STOCK
                 </div>
             </div>
         </div>`;
@@ -902,12 +921,17 @@ function renderAdminInventory() {
             } else {
                 imgHtml = `<div class="w-full h-full flex items-center justify-center p-4">${prod.svg||''}</div>`;
             }
+            const stockStatus = prod.stock <= 0 ? '<span class="text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 uppercase">OUT OF STOCK</span>' : 
+                                 prod.stock <= 3 ? `<span class="text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 uppercase">LOW STOCK (${prod.stock})</span>` :
+                                 `<span class="text-[8px] font-bold bg-green-600 text-white px-1.5 py-0.5 uppercase">IN STOCK (${prod.stock})</span>`;
+            
             return `<div class="bg-white border border-[#E5DFD4] hover:border-[#C9A96E] transition-all group">
                 <div class="h-36 bg-[#F9F6F0] flex items-center justify-center relative overflow-hidden">
                     ${imgHtml}
                     <div class="absolute top-2 left-2 flex gap-1 flex-wrap">
                         ${prod.sale ? '<span class="text-[8px] font-bold bg-[#C9A96E] text-white px-1.5 py-0.5 uppercase">SALE</span>' : ''}
                         ${prod.newArrival ? '<span class="text-[8px] font-bold bg-[#1A1714] text-white px-1.5 py-0.5 uppercase">NEW</span>' : ''}
+                        ${stockStatus}
                     </div>
                 </div>
                 <div class="p-3 border-t border-[#E5DFD4]">
@@ -919,6 +943,9 @@ function renderAdminInventory() {
                             ${prod.originalPrice ? `<span class="text-[10px] line-through text-[#AAA]">${fmt(prod.originalPrice)}</span>` : ''}
                         </div>
                         <button onclick="deleteProductFromInventory('${prod.id}')" class="text-[8px] font-bold uppercase tracking-wider text-[#8A7D6B] hover:text-red-500 border border-[#E5DFD4] hover:border-red-300 px-2 py-1 transition">Remove</button>
+                    </div>
+                    <div class="text-[8px] text-[#8A7D6B] uppercase tracking-widest mt-2 border-t border-[#E5DFD4] pt-2">
+                        📦 Stock: ${prod.stock || 0} pieces
                     </div>
                 </div>
             </div>`;
@@ -1012,6 +1039,16 @@ function updateCartStats() {
 function quickAdd(productId) {
     const prod = state.products.find(p => p.id===productId);
     if (!prod) return;
+    
+    // Check stock availability
+    const currentQty = state.cart.find(i => i.product.id===productId)?.quantity || 0;
+    const availableStock = prod.stock || 0;
+    
+    if (currentQty >= availableStock) {
+        showNotification(`ONLY ${availableStock} PIECE${availableStock!==1?'S':''} AVAILABLE IN STOCK.`);
+        return;
+    }
+    
     const idx = state.cart.findIndex(i => i.product.id===productId);
     if (idx > -1) state.cart[idx].quantity++;
     else state.cart.push({product:prod, quantity:1});
@@ -1120,6 +1157,16 @@ function closeWhatsAppCheckout() {
 function sendWhatsAppOrder() {
     const customMsg = document.getElementById('wa-custom-message').value.trim();
     
+    // Validate stock availability before processing
+    for (let item of state.cart) {
+        const p = item.product;
+        const availableStock = p.stock || 0;
+        if (item.quantity > availableStock) {
+            showNotification(`INSUFFICIENT STOCK FOR ${p.name}. ONLY ${availableStock} AVAILABLE.`);
+            return;
+        }
+    }
+    
     let msg = `✨ *NEW ORDER — GATHAS GALLERY*\n\n🛍️ *ORDER SUMMARY:*\n${'─'.repeat(35)}\n`;
     let subtotal = 0, discount = 0;
     
@@ -1150,11 +1197,33 @@ function sendWhatsAppOrder() {
     msg += `\n🖼️ *VIEW PRODUCTS:* https://gathasgallery.com\n`;
     msg += `_Sent via Gathas Gallery · Dar es Salaam_`;
     
-    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    // Decrement stock for each item in the order
+    state.cart.forEach(item => {
+        const product = state.products.find(p => p.id === item.product.id);
+        if (product) {
+            product.stock = Math.max(0, (product.stock || 0) - item.quantity);
+        }
+    });
     
-    closeWhatsAppCheckout();
-    showNotification("OPENING WHATSAPP WITH YOUR ORDER...");
+    // Save updated inventory to Firebase
+    saveInventory().then(() => {
+        // Clear cart after successful order
+        state.cart = [];
+        saveState();
+        
+        // Open WhatsApp with order message
+        const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+        
+        closeWhatsAppCheckout();
+        renderProducts();
+        renderCart();
+        updateAppStats();
+        showNotification("ORDER SUBMITTED & INVENTORY UPDATED. OPENING WHATSAPP...");
+    }).catch(err => {
+        showNotification("ERROR SAVING ORDER. PLEASE TRY AGAIN.");
+        console.error('Save error:', err);
+    });
 }
 
 /* ===== FILTERS ===== */
@@ -1375,8 +1444,10 @@ async function handleProductUpload(event) {
     const category = document.getElementById('upload-category').value;
     const gender = document.getElementById('upload-gender').value || 'women';
     const nameInput = document.getElementById('upload-name').value.trim().toUpperCase();
+    const stockInput = parseInt(document.getElementById('upload-stock').value);
 
     if (!priceInput || priceInput <= 0) { showNotification("PLEASE ENTER A VALID PRICE."); return; }
+    if (!stockInput || stockInput <= 0) { showNotification("PLEASE ENTER VALID STOCK QUANTITY."); return; }
 
     const catLabels = {earring:'EARRINGS', bracelet:'BRACELETS', necklace:'NECKLACES'};
     const autoName = `${catLabels[category]||'PIECE'} #${state.products.length + 1}`;
@@ -1390,6 +1461,7 @@ async function handleProductUpload(event) {
         originalPrice: originalPrice,
         sale: saleFlag || !!originalPrice,
         newArrival: newFlag,
+        stock: stockInput,
         svg: null,
         image: state.tempUploadedImageBase64,
         description: 'A beautiful handcrafted piece from Gathas Gallery, Dar es Salaam.',
