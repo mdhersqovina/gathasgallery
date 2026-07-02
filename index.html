@@ -728,7 +728,8 @@ function setSyncStatus(status, text) {
 const FIREBASE_URL = 'https://gathasgallery-44642-default-rtdb.europe-west1.firebasedatabase.app/';
 
 async function cloudSave(products) {
-    setSyncStatus('syncing', '⟳ SYNCING...');
+    setSyncStatus('syncing', '⟳ PUBLISHING TO CLOUD...');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     try {
         // Strip SVG functions from products before saving (rebuild from defaults on load)
         const toSave = products.map(p => {
@@ -744,9 +745,8 @@ async function cloudSave(products) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         setSyncStatus('synced', '✓ SYNCED TO ALL DEVICES');
     } catch(e) {
-        console.warn('Cloud save failed, using localStorage fallback:', e);
-        setSyncStatus('error', '⚠ OFFLINE — LOCAL ONLY');
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+        console.warn('Cloud save failed, keeping local backup only:', e);
+        setSyncStatus('error', '⚠ ONLINE SYNC FAILED — LOCAL BACKUP ACTIVE');
     }
 }
 
@@ -757,18 +757,31 @@ async function cloudLoad() {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (data && Array.isArray(data) && data.length > 0) {
-            // Add fallback SVG for products without images
             const rehydrated = data.map(p => {
-                if (!p.svg) p.svg = SVGs.earring_stud; // fallback for custom uploads
+                if (!p.svg) p.svg = SVGs.earring_stud;
                 return p;
             });
             setSyncStatus('synced', '✓ GALLERY LOADED');
             return rehydrated;
         }
+
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+            try {
+                const parsed = JSON.parse(local);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    await cloudSave(parsed);
+                    return parsed;
+                }
+            } catch (parseErr) {
+                console.warn('Local inventory parse failed:', parseErr);
+            }
+        }
+
         setSyncStatus('synced', '✓ READY');
-        return null; // no data yet → use defaults
+        return null;
     } catch(e) {
-        console.warn('Cloud load failed, using localStorage fallback:', e);
+        console.warn('Cloud load failed, using local backup:', e);
         setSyncStatus('error', '⚠ OFFLINE MODE');
         const local = localStorage.getItem(STORAGE_KEY);
         return local ? JSON.parse(local) : null;
@@ -779,9 +792,26 @@ async function cloudLoad() {
 window.addEventListener('DOMContentLoaded', async () => {
     loadLocalUserState();
     renderProducts();
-    // Fetch products ONLY from Firebase (no localStorage fallback)
+
     const cloudData = await cloudLoad();
-    state.products = cloudData || [];
+    const localInventory = (() => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    })();
+
+    if (Array.isArray(cloudData) && cloudData.length > 0) {
+        state.products = cloudData;
+    } else if (Array.isArray(localInventory) && localInventory.length > 0) {
+        state.products = localInventory;
+        await cloudSave(state.products);
+    } else {
+        state.products = [];
+    }
+
     renderProducts();
     renderAdminInventory();
     updateAppStats();
