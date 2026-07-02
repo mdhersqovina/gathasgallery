@@ -731,10 +731,9 @@ async function cloudSave(products) {
     setSyncStatus('syncing', '⟳ PUBLISHING TO CLOUD...');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     try {
-        // Strip SVG functions from products before saving (rebuild from defaults on load)
         const toSave = products.map(p => {
             const clean = {...p};
-            if (!clean.image) delete clean.svg; // SVG-only items rebuilt from defaults
+            if (!clean.image) delete clean.svg;
             return clean;
         });
         const res = await fetch(`${FIREBASE_URL}/inventory.json`, {
@@ -742,19 +741,30 @@ async function cloudSave(products) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(toSave)
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (!res.ok) {
+            let detail = '';
+            try { detail = await res.text(); } catch (err) { console.warn(err); }
+            throw new Error(`HTTP ${res.status}${detail ? ` - ${detail}` : ''}`);
+        }
         setSyncStatus('synced', '✓ SYNCED TO ALL DEVICES');
+        return true;
     } catch(e) {
-        console.warn('Cloud save failed, keeping local backup only:', e);
-        setSyncStatus('error', '⚠ ONLINE SYNC FAILED — LOCAL BACKUP ACTIVE');
+        console.error('Cloud save failed:', e);
+        setSyncStatus('error', '⚠ ONLINE SYNC FAILED');
+        showNotification('ONLINE SYNC FAILED. CHECK FIREBASE RULES AND DATABASE URL.');
+        return false;
     }
 }
 
 async function cloudLoad() {
     setSyncStatus('syncing', '⟳ LOADING GALLERY...');
     try {
-        const res = await fetch(`${FIREBASE_URL}/inventory.json`);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const res = await fetch(`${FIREBASE_URL}/inventory.json`, { cache: 'no-store' });
+        if (!res.ok) {
+            let detail = '';
+            try { detail = await res.text(); } catch (err) { console.warn(err); }
+            throw new Error(`HTTP ${res.status}${detail ? ` - ${detail}` : ''}`);
+        }
         const data = await res.json();
         if (data && Array.isArray(data) && data.length > 0) {
             const rehydrated = data.map(p => {
@@ -781,7 +791,7 @@ async function cloudLoad() {
         setSyncStatus('synced', '✓ READY');
         return null;
     } catch(e) {
-        console.warn('Cloud load failed, using local backup:', e);
+        console.error('Cloud load failed:', e);
         setSyncStatus('error', '⚠ OFFLINE MODE');
         const local = localStorage.getItem(STORAGE_KEY);
         return local ? JSON.parse(local) : null;
